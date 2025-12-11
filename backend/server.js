@@ -3,84 +3,91 @@ const express = require("express")
 const cors = require("cors")
 const mongoose = require("mongoose")
 const multer = require('multer')
-const fs=require("fs")
+const fs = require("fs")
 const app = express()
 
 
-require('dotenv').config(); 
+require('dotenv').config();
 const jwt = require('jsonwebtoken');
+const corsOptions = {
+  origin: "https://test-api-beta-lovat.vercel.app/",   // React frontend URL
+  credentials: true,                 // Allow cookies / tokens
+};
+
+app.use(cors(corsOptions));
+
 app.use(express.json())
-app.use(cors())
+
 
 
 
 app.listen(9000, () => {
   console.log("server is running")
- })
+})
 
 
 
 mongoose.connect(process.env.mongodb_url)
-    .then(() => console.log("database is connected"))
+  .then(() => console.log("database is connected"))
 
-    .catch((err) => console.log("database is not connected"))
+  .catch((err) => console.log("database is not connected"))
 console.log(process.env.mongodb_url)
 
 const cart = mongoose.Schema({
-    firstname: String,
-    lastname: String,
-    email: String,
-    password: String,
+  firstname: String,
+  lastname: String,
+  email: String,
+  password: String,
 
-  usertype:String,
+  usertype: String,
 
-},{versionKey:false})
+}, { versionKey: false })
 const datamodel = mongoose.model("reg", cart, "reg")
 
 //register api
 app.post("/api/register", async (req, res) => {
-    let rr = new datamodel({
-        firstname: req.body.fname,
-        lastname: req.body.lname,
+  let rr = new datamodel({
+    firstname: req.body.fname,
+    lastname: req.body.lname,
 
-        
-        email: req.body.email,
-        password: req.body.pwd,
-      usertype:"user"
-    });
-    const result = await rr.save()
-    if (result) {
-        res.send({ statuscode: 1 })
-    } else {
-        res.send({ statuscode: 0 })
-    }
+
+    email: req.body.email,
+    password: req.body.pwd,
+    usertype: "user"
+  });
+  const result = await rr.save()
+  if (result) {
+    res.send({ statuscode: 1 })
+  } else {
+    res.send({ statuscode: 0 })
+  }
 
 })
 
 //alluser
-app.get("/api/alluser",async(req,res)=>{
-  let result= await datamodel.find();
+app.get("/api/alluser", async (req, res) => {
+  let result = await datamodel.find();
 
-    if (result){
-      res.send({statuscode:1,userlist:result})
+  if (result) {
+    res.send({ statuscode: 1, userlist: result })
 
-    }
-    else{
-      res.send({statuscode:0})
-    }
-  
+  }
+  else {
+    res.send({ statuscode: 0 })
+  }
+
 })
 
 //delete user
-app.delete("/api/deleteuser/:id",async(req,res)=>{
-  const result = await datamodel.deleteOne({_id:req.params.id})
+app.delete("/api/deleteuser/:id", async (req, res) => {
+  const result = await datamodel.deleteOne({ _id: req.params.id })
   console.log(result)
-  if(result){
-  res.send({statuscode:1})
+  if (result) {
+    res.send({ statuscode: 1 })
 
   }
-  else{
-    res.send({statuscode:0})
+  else {
+    res.send({ statuscode: 0 })
   }
 })
 
@@ -117,7 +124,7 @@ app.post("/api/login", async (req, res) => {
     if (!process.env.TOKEN_KEY) {
       throw new Error("JWT secret key missing");
     }
-    
+
     const data = await datamodel.findOne({ email: req.body.email });
     if (!data) {
       return res.send({ statuscode: 0, message: "Invalid email or password" });
@@ -131,13 +138,13 @@ app.post("/api/login", async (req, res) => {
       userdata: {
         email: data.email,
         userid: data._id,
-    
+
         firstname: data.firstname,
 
-    
+
       },
       authtoken: token,
-          usertype: data.usertype,
+      usertype: data.usertype,
     });
   } catch (error) {
     console.error("Login error:", error);
@@ -148,189 +155,189 @@ app.post("/api/login", async (req, res) => {
 
 
 app.get("/api/fetchdata", async (req, res) => {
-    const result = await datamodel.find()
-    if (result) {
-        res.send({ statuscode: 1, data: result })
-    } else {
-        res.send({ statuscode: 0 })
-    }
+  const result = await datamodel.find()
+  if (result) {
+    res.send({ statuscode: 1, data: result })
+  } else {
+    res.send({ statuscode: 0 })
+  }
 })
 
 let categorypic;
 const mystorage = multer.diskStorage({
-    destination: (req,file,cb) => {
-        cb(null, "./public/uploads")
-    },
-    filename: (req,file,cb) => {
-        categorypic =file.originalname
-        cb(null, categorypic)
+  destination: (req, file, cb) => {
+    cb(null, "./public/uploads")
+  },
+  filename: (req, file, cb) => {
+    categorypic = file.originalname
+    cb(null, categorypic)
 
-    }
+  }
 })
 const upload1 = multer({ storage: mystorage })
 const cart1 = mongoose.Schema({
-    categoryname: String,
-    categorytype: String,
+  categoryname: String,
+  categorytype: String,
 })
 const datamodel1 = mongoose.model("cate", cart1, "cate")
 
 
 
 app.post("/api/category", upload1.single("ctype1"), async (req, res) => {
-    const data = new datamodel1({
-        categoryname: req.body.cname1,
-        categorytype: categorypic,
-    })
-    const result = await data.save()
-    if (result) {
-        res.send({ statuscode: 1 })
-    }
-    else {
-        res.send({ statuscode: 0 })
-    }
+  const data = new datamodel1({
+    categoryname: req.body.cname1,
+    categorytype: categorypic,
+  })
+  const result = await data.save()
+  if (result) {
+    res.send({ statuscode: 1 })
+  }
+  else {
+    res.send({ statuscode: 0 })
+  }
 })
 
 
-app.get("/api/category1",async(req,res)=>{
-    const data= await datamodel1.find()
-    if(data){
-        res.send({statuscode:1, data1:data})
-    }
-    else{
-        res.send({statuscode:0})
-    }
+app.get("/api/category1", async (req, res) => {
+  const data = await datamodel1.find()
+  if (data) {
+    res.send({ statuscode: 1, data1: data })
+  }
+  else {
+    res.send({ statuscode: 0 })
+  }
 })
 
 
-   const cart3=mongoose.Schema({
-      catid:String,
-   
-      pname:String,
-      pq:String,
-      pimg:String,
-      pprice:String,
-      pdescription:String,
-      Addedon:String
-   })
-   const datamodel3=mongoose.model("pdata",cart3,"pdata")
-   app.post("/api/product",upload1.single("pimg1"),async(req,res)=>{
-      const data=new datamodel3({
-        catid:req.body.catid,
-         pname:req.body.pname1,
-        pq:req.body.pq1,
-        pimg:categorypic,
-        pprice:req.body.pprice,
-        pdescription:req.body.pdescription,
-        Addedon:new Date()
-      })
-       const data1=await data.save()
-      if(data1){
-        res.send({statuscode:1})
+const cart3 = mongoose.Schema({
+  catid: String,
+
+  pname: String,
+  pq: String,
+  pimg: String,
+  pprice: String,
+  pdescription: String,
+  Addedon: String
+})
+const datamodel3 = mongoose.model("pdata", cart3, "pdata")
+app.post("/api/product", upload1.single("pimg1"), async (req, res) => {
+  const data = new datamodel3({
+    catid: req.body.catid,
+    pname: req.body.pname1,
+    pq: req.body.pq1,
+    pimg: categorypic,
+    pprice: req.body.pprice,
+    pdescription: req.body.pdescription,
+    Addedon: new Date()
+  })
+  const data1 = await data.save()
+  if (data1) {
+    res.send({ statuscode: 1 })
+  }
+  else {
+    res.send({ statuscode: 0 })
+  }
+
+})
+app.get("/api/product1", async (req, res) => {
+  const result = await datamodel3.find()
+  if (result) {
+    res.send({ statuscode: 1, dd: result })
+  }
+  else {
+    res.send({ statuscode: 0 })
+  }
+})
+app.get("/api/showproduct/:id", async (req, res) => {
+  const result = await datamodel3.find({ catid: req.params.id })
+  if (result) {
+    res.send({ statuscode: 1, dd: result })
+  }
+  else {
+    res.send({ statuscode: 0 })
+  }
+})
+app.delete("/api/delete/:cid", async (req, res) => {
+  const result = await datamodel1.deleteOne({ _id: req.params.cid })
+  if (result.deletedCount === 1) {
+    res.send({ statuscode: 1 })
+  } else {
+    res.send({ statuscode: 0 })
+  }
+})
+app.delete("/api/sdelete/:sid", async (req, res) => {
+  const result = await datamodel2.deleteOne({ _id: req.params.sid })
+  if (result.deletedCount === 1) {
+    res.send({ statuscode: 1 })
+  }
+  else {
+    res.send({ statuscode: 0 })
+  }
+})
+app.delete("/api/pdelete/:pid", async (req, res) => {
+  const result = await datamodel3.deleteOne({ _id: req.params.pid })
+  if (result.deletedCount === 1) {
+    res.send({ statuscode: 1 })
+  }
+  else {
+    res.send({ statuscode: 0 })
+  }
+})
+app.get("/api/pdetails/:id", async (req, res) => {
+  const result = await datamodel3.findOne({ _id: req.params.id })
+  if (result) {
+    res.send({ statuscode: 1, dd: result })
+  }
+  else {
+    res.send({ statuscode: 0 })
+  }
+})
+
+app.put("/api/categoryupdate", upload1.single("ctype"), async (req, res) => {
+  if (!req.file) {
+
+    categorytype = req.body.oldpic
+  }
+  else {
+    fs.unlink("./public/uploads" + req.body.oldpic, (err) => {
+      if (err) {
+        console.log("file didn't delete")
+      } else {
+        console.log("file deleted")
       }
-      else{
-        res.send({statuscode:0})
-      }
-      
-   })
-   app.get("/api/product1",async(req,res)=>{
-    const result= await datamodel3.find()
-    if(result){
-        res.send({statuscode:1, dd:result})
-    }
-    else{
-        res.send({statuscode:0})
-    }
-   })
-   app.get("/api/showproduct/:id",async(req,res)=>{
-    const result= await datamodel3.find({catid:req.params.id})
-    if(result){
-        res.send({statuscode:1, dd:result})
-    }
-    else{
-        res.send({statuscode:0})
-    }
-   })
-   app.delete("/api/delete/:cid",async(req,res)=>{
-const result=await datamodel1.deleteOne({_id:req.params.cid})
-if(result.deletedCount===1){
-    res.send({statuscode:1})
-}else{
-    res.send({statuscode:0})
-}
-   })
-   app.delete("/api/sdelete/:sid",async(req,res)=>{
-    const result=await datamodel2.deleteOne({_id:req.params.sid})
-    if(result.deletedCount===1){
-        res.send({statuscode:1})
-    }
-    else{
-        res.send({statuscode:0})
-    }
-   })
-app.delete("/api/pdelete/:pid",async(req,res)=>{
-    const result= await datamodel3.deleteOne({_id:req.params.pid})
-    if(result.deletedCount===1){
-        res.send({statuscode:1})
-    }
-    else{
-        res.send({statuscode:0})
-    }
-})
-app.get("/api/pdetails/:id",async(req,res)=>{
-       const result=await datamodel3.findOne({_id:req.params.id})
-       if(result){
-        res.send({statuscode:1,dd:result})
-       }
-       else{
-        res.send({statuscode:0})
-       }
-})
-
-app.put("/api/categoryupdate",upload1.single("ctype"),async(req,res)=>{
-    if(!req.file){
-       
-    categorytype=req.body.oldpic
-    }
-    else{
-        fs.unlink("./public/uploads"+req.body.oldpic,(err)=>{
-            if(err){
-                console.log("file didn't delete")
-            }else{
-                console.log("file deleted")
-            }
-        })
-    }
-
-    const result= await datamodel1.updateOne({_id:req.body.categoryid},{$set:{categoryname:req.body.cname,categorytype:categorypic}})
-    if(result){
-        res.send({statuscode:1})
-    }
-    else{
-        res.send({statuscode:0})
-    }
-})
-
-
-app.put("/api/updatesubcategory",upload1.single("subtype"),async(req,res)=>{
-    if(!req.file){
-        subtype=req.body.oldpic
-    }
-    else{
-        fs.unlink("./public/uploads"+req.body.oldpic,(err)=>{
-        if(err){
-            console.log("file didn't delete")
-        }
-        else{
-            console.log("file deleted")
-        }
     })
-    }
-    const result= await datamodel2.updateOne({_id:req.body.subcategoryid},{$set:{subname:req.body.subname, subtype:categorypic}})
-    if(result){
-        res.send({statuscode:1})
-    }else{
-        res.send({statuscode:0}) 
-    } 
+  }
+
+  const result = await datamodel1.updateOne({ _id: req.body.categoryid }, { $set: { categoryname: req.body.cname, categorytype: categorypic } })
+  if (result) {
+    res.send({ statuscode: 1 })
+  }
+  else {
+    res.send({ statuscode: 0 })
+  }
+})
+
+
+app.put("/api/updatesubcategory", upload1.single("subtype"), async (req, res) => {
+  if (!req.file) {
+    subtype = req.body.oldpic
+  }
+  else {
+    fs.unlink("./public/uploads" + req.body.oldpic, (err) => {
+      if (err) {
+        console.log("file didn't delete")
+      }
+      else {
+        console.log("file deleted")
+      }
+    })
+  }
+  const result = await datamodel2.updateOne({ _id: req.body.subcategoryid }, { $set: { subname: req.body.subname, subtype: categorypic } })
+  if (result) {
+    res.send({ statuscode: 1 })
+  } else {
+    res.send({ statuscode: 0 })
+  }
 })
 
 
@@ -342,65 +349,65 @@ app.put("/api/updatesubcategory",upload1.single("subtype"),async(req,res)=>{
 
 
 
-app.put("/api/productupdate",upload1.single("pimg"),async(req,res)=>{
-    if(!req.file){
-        categorypic=req.body.oldpic
-    }
-    else{
-        fs.unlink("public/uploads"+req.body.oldpic,()=>{
-            console.log("pic deleted")
-        })
-    }
-    const  result=await datamodel3.updateOne({_id:req.body.productid},{$set:{pname:req.body.pname,pimg:categorypic}})
-    if(result){
-        res.send({statuscode:1})
-    }
-    else{
-        res.send({statuscode:0})
-    }
+app.put("/api/productupdate", upload1.single("pimg"), async (req, res) => {
+  if (!req.file) {
+    categorypic = req.body.oldpic
+  }
+  else {
+    fs.unlink("public/uploads" + req.body.oldpic, () => {
+      console.log("pic deleted")
+    })
+  }
+  const result = await datamodel3.updateOne({ _id: req.body.productid }, { $set: { pname: req.body.pname, pimg: categorypic } })
+  if (result) {
+    res.send({ statuscode: 1 })
+  }
+  else {
+    res.send({ statuscode: 0 })
+  }
 })
 
 
 
 const cart4 = mongoose.Schema({
-    userid: String, 
-    email: String,
-    productname: String,
-    productquantity: Number,
-    productprice: String,
-    productimage: String,
-    productdes: String,
-    totalprice: String,
-    productid: String
+  userid: String,
+  email: String,
+  productname: String,
+  productquantity: Number,
+  productprice: String,
+  productimage: String,
+  productdes: String,
+  totalprice: String,
+  productid: String
 });
 
 
 
 const datamodel4 = mongoose.model("addtocart", cart4, "addtocart")
 app.post("/api/addcart", async (req, res) => {
-    try {
-        const result = new datamodel4({
-            userid: req.body.userid, 
-            email: req.body.email,
-            productname: req.body.pname,
-            productquantity: req.body.pq,
-            productprice: req.body.pprice,
-            productimage: req.body.pimg,
-            productdes: req.body.pdes,
-            totalprice: req.body.tprice,
-            productid: req.body.productid
-        });
+  try {
+    const result = new datamodel4({
+      userid: req.body.userid,
+      email: req.body.email,
+      productname: req.body.pname,
+      productquantity: req.body.pq,
+      productprice: req.body.pprice,
+      productimage: req.body.pimg,
+      productdes: req.body.pdes,
+      totalprice: req.body.tprice,
+      productid: req.body.productid
+    });
 
-        const data = await result.save();
-        if (data) {
-            res.send({ statuscode: 1 });
-        } else {
-            res.send({ statuscode: 0 });
-        }
-    } catch (error) {
-        console.error("Error adding to cart:", error);
-        res.status(500).send({ statuscode: -1, error: "Server error" });
+    const data = await result.save();
+    if (data) {
+      res.send({ statuscode: 1 });
+    } else {
+      res.send({ statuscode: 0 });
     }
+  } catch (error) {
+    console.error("Error adding to cart:", error);
+    res.status(500).send({ statuscode: -1, error: "Server error" });
+  }
 });
 
 
@@ -413,9 +420,9 @@ app.post("/api/checkcart", async (req, res) => {
     const { userid, idd } = req.body;
 
     if (!userid || !idd) {
-      return res.status(400).json({ 
-        statuscode: 0, 
-        msg: "User ID and Product ID are required" 
+      return res.status(400).json({
+        statuscode: 0,
+        msg: "User ID and Product ID are required"
       });
     }
 
@@ -494,40 +501,40 @@ app.post("/api/updatecart", async (req, res) => {
 
 
 app.get("/api/cartdata/:userid", async (req, res) => {
-    try {
-        const userid = req.params.userid;
+  try {
+    const userid = req.params.userid;
 
-        if (!userid) {
-            return res.status(400).json({ 
-                statuscode: 0, 
-                message: "User ID is required" 
-            });
-        }
-
-        const cartItems = await datamodel4.find({ userid: userid });
-
-        if (cartItems.length > 0) {
-            return res.json({
-                statuscode: 1,
-                message: "Cart data retrieved",
-                data: cartItems,
-                arraylength: cartItems.length
-            });
-        } else {
-            return res.json({
-                statuscode: 0,
-                message: "No items found in cart",
-                data: [],
-                arraylength: 0
-            });
-        }
-    } catch (error) {
-        console.error("Server Error:", error);
-        return res.status(500).json({
-            statuscode: -1,
-            message: "Internal server error"
-        });
+    if (!userid) {
+      return res.status(400).json({
+        statuscode: 0,
+        message: "User ID is required"
+      });
     }
+
+    const cartItems = await datamodel4.find({ userid: userid });
+
+    if (cartItems.length > 0) {
+      return res.json({
+        statuscode: 1,
+        message: "Cart data retrieved",
+        data: cartItems,
+        arraylength: cartItems.length
+      });
+    } else {
+      return res.json({
+        statuscode: 0,
+        message: "No items found in cart",
+        data: [],
+        arraylength: 0
+      });
+    }
+  } catch (error) {
+    console.error("Server Error:", error);
+    return res.status(500).json({
+      statuscode: -1,
+      message: "Internal server error"
+    });
+  }
 });
 
 
@@ -535,17 +542,17 @@ app.get("/api/cartdata/:userid", async (req, res) => {
 //delete cart
 
 app.delete("/api/cartdelete/:id", async (req, res) => {
-    try {
-        const result = await datamodel4.findByIdAndDelete(req.params.id);
-        if (result) {
-            res.send({ statuscode: 1, data: result })
-        } else {
-            res.send({ statuscode: 0 })
-        }
-    } catch (error) {
-        console.error("Error deleting cart item:", error);
-        res.status(500).send({ statuscode: -1, error: "Server error" })
+  try {
+    const result = await datamodel4.findByIdAndDelete(req.params.id);
+    if (result) {
+      res.send({ statuscode: 1, data: result })
+    } else {
+      res.send({ statuscode: 0 })
     }
+  } catch (error) {
+    console.error("Error deleting cart item:", error);
+    res.status(500).send({ statuscode: -1, error: "Server error" })
+  }
 })
 
 
@@ -560,8 +567,8 @@ const checkoutSchema = new mongoose.Schema({
   cash: String,
   orderid: String,
   totalPrice: Number,
-  items: [{pname:String,pq:Number,tprice:Number}]
-  
+  items: [{ pname: String, pq: Number, tprice: Number }]
+
 }, { timestamps: true });
 
 const CheckoutModel = mongoose.model("checkoutdata", checkoutSchema, "checkoutdata");
@@ -572,9 +579,9 @@ const CheckoutModel = mongoose.model("checkoutdata", checkoutSchema, "checkoutda
 
 app.post("/api/checkcartdata", async (req, res) => {
   try {
-    const { name, email, mobile, address, cash, orderid, totalPrice} = req.body;
+    const { name, email, mobile, address, cash, orderid, totalPrice } = req.body;
 
-    if (!name || !email || !mobile || !address || !cash || !totalPrice ) {
+    if (!name || !email || !mobile || !address || !cash || !totalPrice) {
       return res.send({ statuscode: 0, msg: "Missing required fields" });
     }
 
@@ -586,7 +593,7 @@ app.post("/api/checkcartdata", async (req, res) => {
       cash,
       orderid,
       totalPrice,
-      items:req.body.data
+      items: req.body.data
     });
 
     await newOrder.save();
@@ -598,7 +605,7 @@ app.post("/api/checkcartdata", async (req, res) => {
 });
 
 
- //to get all orders
+//to get all orders
 app.get("/api/allorders", async (req, res) => {
   try {
     const orders = await CheckoutModel.find().sort({ createdAt: -1 });
@@ -610,14 +617,14 @@ app.get("/api/allorders", async (req, res) => {
 });
 
 
-app.get("/api/useraddress/:id",async(req,res)=>{
-    const result= await Checkout.findOne({orderid:req.params.id})
-    if(result){
-        res.send({statuscode:1, data:result})
-    }
-    else{
-        res.send({statuscode:0})
-    }
+app.get("/api/useraddress/:id", async (req, res) => {
+  const result = await Checkout.findOne({ orderid: req.params.id })
+  if (result) {
+    res.send({ statuscode: 1, data: result })
+  }
+  else {
+    res.send({ statuscode: 0 })
+  }
 })
 
 //// cart delete after checkout
@@ -636,13 +643,13 @@ app.delete('/api/clearcart/:userid', async (req, res) => {
 
 //show latest product api
 app.get("/api/latestprod", async (req, res) => {
-    const result = await datamodel3.find().sort({ "Addedon": -1 }).limit(9)
-    if (result) {
-        res.send({ statuscode: 1, proddata: result })
-    }
-    else {
-        res.send({ statuscode: 0 })
-    }
+  const result = await datamodel3.find().sort({ "Addedon": -1 }).limit(9)
+  if (result) {
+    res.send({ statuscode: 1, proddata: result })
+  }
+  else {
+    res.send({ statuscode: 0 })
+  }
 })
 
 // Simple ContactUs Schema and Model
