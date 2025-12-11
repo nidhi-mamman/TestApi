@@ -55,7 +55,7 @@ const Register = () => {
 
         const data = { fname, lname, email, pwd }
         try {
-            const res = await fetch("http://localhost:9000/api/register", {
+            const res = await fetch("https://testapi-4-29ew.onrender.com/api/register", {
                 method: "post",
                 body: JSON.stringify(data),
                 headers: {
