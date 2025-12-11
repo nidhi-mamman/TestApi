@@ -24,6 +24,7 @@ mongoose.connect(process.env.mongodb_url)
     .then(() => console.log("database is connected"))
 
     .catch((err) => console.log("database is not connected"))
+console.log(process.env.mongodb_url)
 
 const cart = mongoose.Schema({
     firstname: String,
