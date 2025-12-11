@@ -10,7 +10,7 @@ const app = express()
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
 const corsOptions = {
-  origin: "https://test-api-beta-lovat.vercel.app/",   // React frontend URL
+  origin: "https://test-api-beta-lovat.vercel.app",   // React frontend URL
   credentials: true,                 // Allow cookies / tokens
 };
 
